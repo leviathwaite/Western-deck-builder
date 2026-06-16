@@ -1,0 +1,14 @@
+{
+  "enemies": [
+    {
+      "id": "deputy_hunter",
+      "name": "Deputy Hunter",
+      "hp": 42,
+      "intents": [
+        { "type": "attack", "value": 6 },
+        { "type": "guard", "value": 5 },
+        { "type": "attack", "value": 8 }
+      ]
+    }
+  ]
+}

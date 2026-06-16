@@ -1,0 +1,117 @@
+{
+  "cards": [
+    {
+      "id": "revolver_shot",
+      "name": "Revolver Shot",
+      "cost": 1,
+      "type": "attack",
+      "weapon": "basic_revolver",
+      "text": "Deal 6 damage. Consumes 1 ammo.",
+      "effects": { "damage": 6 }
+    },
+    {
+      "id": "fan_the_hammer",
+      "name": "Fan the Hammer",
+      "cost": 2,
+      "type": "attack",
+      "weapon": "basic_revolver",
+      "text": "Deal 10 damage. Consumes 1 ammo.",
+      "effects": { "damage": 10 }
+    },
+    {
+      "id": "reload_revolver",
+      "name": "Reload Revolver",
+      "cost": 1,
+      "type": "skill",
+      "weapon": "basic_revolver",
+      "text": "Restore 2 revolver ammo.",
+      "effects": { "ammo_restore": 2 }
+    },
+    {
+      "id": "knife_slash",
+      "name": "Knife Slash",
+      "cost": 1,
+      "type": "attack",
+      "weapon": "basic_knife",
+      "text": "Deal 5 damage and apply 2 bleed.",
+      "effects": { "damage": 5, "bleed": 2 }
+    },
+    {
+      "id": "gut_cut",
+      "name": "Gut Cut",
+      "cost": 1,
+      "type": "attack",
+      "weapon": "basic_knife",
+      "text": "Deal 7 damage.",
+      "effects": { "damage": 7 }
+    },
+    {
+      "id": "take_cover",
+      "name": "Take Cover",
+      "cost": 1,
+      "type": "skill",
+      "text": "Gain 7 block.",
+      "effects": { "block": 7 }
+    },
+    {
+      "id": "steady_breath",
+      "name": "Steady Breath",
+      "cost": 0,
+      "type": "skill",
+      "text": "Draw 1 card.",
+      "effects": { "draw": 1 }
+    },
+    {
+      "id": "quick_step",
+      "name": "Quick Step",
+      "cost": 0,
+      "type": "skill",
+      "text": "Gain 4 block.",
+      "effects": { "block": 4 }
+    },
+    {
+      "id": "grit",
+      "name": "Grit",
+      "cost": 1,
+      "type": "skill",
+      "text": "Gain 8 block.",
+      "effects": { "block": 8 }
+    },
+    {
+      "id": "repeat_rifle",
+      "name": "Repeat Rifle",
+      "cost": 2,
+      "type": "attack",
+      "weapon": "repeater_rifle",
+      "text": "Deal 12 damage. Consumes 1 ammo.",
+      "effects": { "damage": 12 }
+    },
+    {
+      "id": "reload_rifle",
+      "name": "Reload Rifle",
+      "cost": 1,
+      "type": "skill",
+      "weapon": "repeater_rifle",
+      "text": "Restore 2 rifle ammo.",
+      "effects": { "ammo_restore": 2 }
+    },
+    {
+      "id": "scatter_blast",
+      "name": "Scatter Blast",
+      "cost": 2,
+      "type": "attack",
+      "weapon": "coach_shotgun",
+      "text": "Deal 14 damage. Consumes 1 ammo.",
+      "effects": { "damage": 14 }
+    },
+    {
+      "id": "nock_arrow",
+      "name": "Nock Arrow",
+      "cost": 1,
+      "type": "attack",
+      "weapon": "hunter_bow",
+      "text": "Deal 8 damage. Consumes 1 ammo.",
+      "effects": { "damage": 8 }
+    }
+  ]
+}

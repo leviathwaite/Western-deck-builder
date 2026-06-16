@@ -1,0 +1,70 @@
+{
+  "weapons": [
+    {
+      "id": "basic_revolver",
+      "name": "Basic Revolver",
+      "slot": "left_holster",
+      "weaponType": "pistol",
+      "ammo": 6,
+      "damageBonus": 0,
+      "cardPack": "starter_revolver",
+      "cards": ["revolver_shot", "revolver_shot", "fan_the_hammer", "reload_revolver"],
+      "description": "A weathered six-shooter fit for the frontier."
+    },
+    {
+      "id": "offhand_revolver",
+      "name": "Offhand Revolver",
+      "slot": "right_holster",
+      "weaponType": "pistol",
+      "ammo": 6,
+      "damageBonus": 1,
+      "cardPack": "offhand_revolver",
+      "cards": ["revolver_shot", "revolver_shot", "reload_revolver"],
+      "description": "A lighter sidearm for fast follow-up shots."
+    },
+    {
+      "id": "basic_knife",
+      "name": "Basic Knife",
+      "slot": "knife_sheath",
+      "weaponType": "knife",
+      "ammo": 0,
+      "damageBonus": 0,
+      "cardPack": "starter_knife",
+      "cards": ["knife_slash", "knife_slash", "gut_cut"],
+      "description": "A dependable blade for close encounters."
+    },
+    {
+      "id": "repeater_rifle",
+      "name": "Repeater Rifle",
+      "slot": "back",
+      "weaponType": "rifle",
+      "ammo": 5,
+      "damageBonus": 2,
+      "cardPack": "starter_rifle",
+      "cards": ["repeat_rifle", "repeat_rifle", "reload_rifle"],
+      "description": "Long range punch carried across the shoulders."
+    },
+    {
+      "id": "coach_shotgun",
+      "name": "Coach Shotgun",
+      "slot": "back",
+      "weaponType": "shotgun",
+      "ammo": 2,
+      "damageBonus": 3,
+      "cardPack": "starter_shotgun",
+      "cards": ["scatter_blast"],
+      "description": "Brutal up close, slow to manage."
+    },
+    {
+      "id": "hunter_bow",
+      "name": "Hunter Bow",
+      "slot": "back",
+      "weaponType": "bow",
+      "ammo": 4,
+      "damageBonus": 1,
+      "cardPack": "starter_bow",
+      "cards": ["nock_arrow", "nock_arrow"],
+      "description": "Quiet, patient, and deadly in the right hands."
+    }
+  ]
+}
