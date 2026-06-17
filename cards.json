@@ -50,8 +50,16 @@
       "name": "Take Cover",
       "cost": 1,
       "type": "skill",
-      "text": "Gain 7 block.",
-      "effects": { "block": 7 }
+      "text": "Gain 7 block and drop behind a rock.",
+      "effects": { "block": 7, "positioning": "cover" }
+    },
+    {
+      "id": "hide_in_brush",
+      "name": "Hide in Brush",
+      "cost": 1,
+      "type": "skill",
+      "text": "Gain 5 block and hide in a bush.",
+      "effects": { "block": 5, "positioning": "hide" }
     },
     {
       "id": "steady_breath",
