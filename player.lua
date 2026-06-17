@@ -6,8 +6,10 @@ function Player.new(weaponData)
     self.weaponData = weaponData
     self.maxHp = 70
     self.hp = 70
-    self.maxEnergy = 3
-    self.energy = 3
+    self.maxGrit = 3
+    self.grit = 3
+    self.maxEnergy = self.maxGrit
+    self.energy = self.grit
     self.handSize = 5
     self.block = 0
     self.weaponSlots = {
@@ -122,6 +124,16 @@ function Player:restoreAmmo(weaponId, amount)
     if weapon and weapon.maxAmmo > 0 then
         weapon.ammo = math.min(weapon.maxAmmo, weapon.ammo + amount)
     end
+end
+
+function Player:resetTurnGrit()
+    self.grit = self.maxGrit
+    self.energy = self.grit
+end
+
+function Player:spendGrit(amount)
+    self.grit = math.max(0, self.grit - amount)
+    self.energy = self.grit
 end
 
 function Player:takeDamage(amount)
