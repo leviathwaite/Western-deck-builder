@@ -10,11 +10,12 @@ function LoadoutState.new(shared, onStartRun)
     self.onStartRun = onStartRun
     self.weaponData = Weapons.loadAll()
     self.player = Player.new(self.weaponData)
-    self.message = "Tap a weapon slot to select it. Use buttons to change equipment."
+    self.message = "Tap a weapon slot to view options"
     self.selectedSlotIndex = 1
     self.slotOrder = {"left_holster", "right_holster", "knife_sheath", "back"}
     self.choices = self:buildChoices()
     self.buttons = {}
+    self.showPanel = false
     return self
 end
 
@@ -48,30 +49,57 @@ function LoadoutState:keypressed(key)
         self:cycleSelected(1)
     elseif key == "return" or key == "kpenter" then
         self.onStartRun(self.player:exportRunData())
+    elseif key == "escape" then
+        self.showPanel = false
     end
 end
 
 function LoadoutState:mousepressed(x, y, button)
+    -- Check START button first (highest priority)
+    for i, btn in ipairs(self.buttons) do
+        if btn.type == "start" and x >= btn.x and x <= btn.x + btn.w and y >= btn.y and y <= btn.y + btn.h then
+            self.onStartRun(self.player:exportRunData())
+            return
+        end
+    end
+
+    -- If panel is open, check panel buttons
+    if self.showPanel then
+        for i, btn in ipairs(self.buttons) do
+            if btn.type == "panel_prev" and x >= btn.x and x <= btn.x + btn.w and y >= btn.y and y <= btn.y + btn.h then
+                self:cycleSelected(-1)
+                return
+            end
+            if btn.type == "panel_next" and x >= btn.x and x <= btn.x + btn.w and y >= btn.y and y <= btn.y + btn.h then
+                self:cycleSelected(1)
+                return
+            end
+            if btn.type == "panel_close" and x >= btn.x and x <= btn.x + btn.w and y >= btn.y and y <= btn.y + btn.h then
+                self.showPanel = false
+                return
+            end
+        end
+
+        -- Check if clicked inside panel area
+        for i, btn in ipairs(self.buttons) do
+            if btn.type == "panel_bg" then
+                if x >= btn.x and x <= btn.x + btn.w and y >= btn.y and y <= btn.y + btn.h then
+                    -- Inside panel, do nothing (don't close)
+                    return
+                end
+            end
+        end
+
+        -- Clicked outside panel, close it
+        self.showPanel = false
+        return
+    end
+
     -- Check slot cards
     for i, btn in ipairs(self.buttons) do
         if btn.type == "slot" and x >= btn.x and x <= btn.x + btn.w and y >= btn.y and y <= btn.y + btn.h then
             self.selectedSlotIndex = btn.index
-            return
-        end
-    end
-    
-    -- Check control buttons
-    for i, btn in ipairs(self.buttons) do
-        if btn.type == "prev" and x >= btn.x and x <= btn.x + btn.w and y >= btn.y and y <= btn.y + btn.h then
-            self:cycleSelected(-1)
-            return
-        end
-        if btn.type == "next" and x >= btn.x and x <= btn.x + btn.w and y >= btn.y and y <= btn.y + btn.h then
-            self:cycleSelected(1)
-            return
-        end
-        if btn.type == "start" and x >= btn.x and x <= btn.x + btn.w and y >= btn.y and y <= btn.y + btn.h then
-            self.onStartRun(self.player:exportRunData())
+            self.showPanel = true
             return
         end
     end
@@ -104,7 +132,7 @@ function LoadoutState:cycleSelected(dir)
     if nextIndex > #options then nextIndex = 1 end
 
     slot.equipped = options[nextIndex]
-    self.message = "Equipped updated for " .. slot.name .. "."
+    self.message = "Equipped " .. (options[nextIndex] ~= "" and self.weaponData.byId[options[nextIndex]].name or "Empty") .. " in " .. slot.name
 end
 
 function LoadoutState:drawSlotCard(x, y, width, height, slot, selected, weaponData)
@@ -134,6 +162,77 @@ function LoadoutState:drawButton(label, x, y, width, height)
     love.graphics.setColor(0.95, 0.90, 0.82)
     love.graphics.setFont(self.shared.fonts.medium)
     love.graphics.printf(label, x, y + (height - 20) / 2, width, "center")
+end
+
+function LoadoutState:drawPanel()
+    local screenW = self.shared.screen.width
+    local screenH = self.shared.screen.height
+
+    -- Semi-transparent overlay
+    love.graphics.setColor(0, 0, 0, 0.7)
+    love.graphics.rectangle("fill", 0, 0, screenW, screenH)
+
+    -- Panel dimensions
+    local panelW = screenW - 48
+    local panelH = 320
+    local panelX = 24
+    local panelY = (screenH - panelH) / 2
+
+    -- Panel background
+    love.graphics.setColor(0.18, 0.14, 0.12)
+    love.graphics.rectangle("fill", panelX, panelY, panelW, panelH, 12, 12)
+    table.insert(self.buttons, {type = "panel_bg", x = panelX, y = panelY, w = panelW, h = panelH})
+
+    local slotId = self.slotOrder[self.selectedSlotIndex]
+    local slot = self.player.weaponSlots[slotId]
+
+    -- Header
+    love.graphics.setColor(0.93, 0.86, 0.72)
+    love.graphics.setFont(self.shared.fonts.large)
+    love.graphics.printf(slot.name, panelX, panelY + 20, panelW, "center")
+
+    -- Current equipment display
+    local equippedY = panelY + 70
+    love.graphics.setFont(self.shared.fonts.medium)
+    love.graphics.setColor(0.95, 0.90, 0.82)
+    
+    if slot.equipped ~= "" and self.weaponData.byId[slot.equipped] then
+        local w = self.weaponData.byId[slot.equipped]
+        love.graphics.printf("Currently Equipped:", panelX + 20, equippedY, panelW - 40, "center")
+        love.graphics.setFont(self.shared.fonts.large)
+        love.graphics.printf(w.name, panelX + 20, equippedY + 30, panelW - 40, "center")
+        love.graphics.setFont(self.shared.fonts.small)
+        love.graphics.printf(w.description, panelX + 20, equippedY + 70, panelW - 40, "center")
+    else
+        love.graphics.printf("Currently Equipped:", panelX + 20, equippedY, panelW - 40, "center")
+        love.graphics.setFont(self.shared.fonts.large)
+        love.graphics.printf("Empty", panelX + 20, equippedY + 30, panelW - 40, "center")
+    end
+
+    -- Buttons at bottom of panel
+    local btnY = panelY + panelH - 70
+    local btnHeight = 50
+    local btnGap = 10
+    local btnWidth = (panelW - 60 - btnGap * 2) / 3
+
+    if slot.unlocked then
+        -- Previous button
+        self:drawButton("<", panelX + 20, btnY, btnWidth, btnHeight)
+        table.insert(self.buttons, {type = "panel_prev", x = panelX + 20, y = btnY, w = btnWidth, h = btnHeight})
+
+        -- Close button
+        self:drawButton("DONE", panelX + 20 + btnWidth + btnGap, btnY, btnWidth, btnHeight)
+        table.insert(self.buttons, {type = "panel_close", x = panelX + 20 + btnWidth + btnGap, y = btnY, w = btnWidth, h = btnHeight})
+
+        -- Next button
+        self:drawButton(">", panelX + 20 + (btnWidth + btnGap) * 2, btnY, btnWidth, btnHeight)
+        table.insert(self.buttons, {type = "panel_next", x = panelX + 20 + (btnWidth + btnGap) * 2, y = btnY, w = btnWidth, h = btnHeight})
+    else
+        -- Just close button for locked slots
+        local closeW = panelW - 40
+        self:drawButton("CLOSE", panelX + 20, btnY, closeW, btnHeight)
+        table.insert(self.buttons, {type = "panel_close", x = panelX + 20, y = btnY, w = closeW, h = btnHeight})
+    end
 end
 
 function LoadoutState:draw()
@@ -173,24 +272,22 @@ function LoadoutState:draw()
     love.graphics.setFont(self.shared.fonts.small)
     love.graphics.printf(self.message, 24, messageY, screenW - 48, "center")
 
-    -- Control buttons at bottom
-    local btnY = screenH - 120
-    local btnHeight = 50
-    local btnGap = 10
-    local btnWidth = (screenW - 48 - btnGap * 2) / 3
+    -- START button at bottom
+    local btnY = screenH - 100
+    local btnHeight = 60
+    local btnWidth = screenW - 48
 
-    self:drawButton("<", 24, btnY, btnWidth, btnHeight)
-    table.insert(self.buttons, {type = "prev", x = 24, y = btnY, w = btnWidth, h = btnHeight})
-
-    self:drawButton("START", 24 + btnWidth + btnGap, btnY, btnWidth, btnHeight)
-    table.insert(self.buttons, {type = "start", x = 24 + btnWidth + btnGap, y = btnY, w = btnWidth, h = btnHeight})
-
-    self:drawButton(">", 24 + (btnWidth + btnGap) * 2, btnY, btnWidth, btnHeight)
-    table.insert(self.buttons, {type = "next", x = 24 + (btnWidth + btnGap) * 2, y = btnY, w = btnWidth, h = btnHeight})
+    self:drawButton("START RUN", 24, btnY, btnWidth, btnHeight)
+    table.insert(self.buttons, {type = "start", x = 24, y = btnY, w = btnWidth, h = btnHeight})
 
     -- Instructions
     love.graphics.setFont(self.shared.fonts.small)
-    love.graphics.printf("Tap slot to select | < > change weapon | START to begin", 24, screenH - 50, screenW - 48, "center")
+    love.graphics.printf("Tap any slot to change equipment", 24, screenH - 30, screenW - 48, "center")
+
+    -- Draw panel on top if active
+    if self.showPanel then
+        self:drawPanel()
+    end
 end
 
 return LoadoutState
