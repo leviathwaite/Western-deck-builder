@@ -142,9 +142,9 @@ end
 function BattleState:spawnFieldObject(positioningType)
     local object = nil
     if positioningType == "cover" then
-        object = {kind = "rock", x = 250, y = 305, w = 90, h = 55}
+        object = {kind = "rock", relx = 0.35, rely = 0.70, scale = 1.0}
     elseif positioningType == "hide" then
-        object = {kind = "bush", x = 230, y = 280, w = 120, h = 90}
+        object = {kind = "bush", relx = 0.34, rely = 0.64, scale = 1.0}
     end
 
     if object then
@@ -189,97 +189,142 @@ function BattleState:endTurn()
     self.selectedCardIndex = 1
 end
 
-function BattleState:drawFieldObjects()
+function BattleState:drawFieldObjects(fieldX, fieldY, fieldW, fieldH)
     for _, obj in ipairs(self.fieldObjects) do
+        local x = fieldX + fieldW * obj.relx
+        local y = fieldY + fieldH * obj.rely
         if obj.kind == "rock" then
+            local rx = math.max(24, fieldW * 0.09 * obj.scale)
+            local ry = math.max(14, fieldH * 0.10 * obj.scale)
             love.graphics.setColor(0.42, 0.40, 0.38)
-            love.graphics.ellipse("fill", obj.x, obj.y, obj.w / 2, obj.h / 2)
+            love.graphics.ellipse("fill", x, y, rx, ry)
             love.graphics.setColor(0.30, 0.28, 0.27)
-            love.graphics.ellipse("line", obj.x, obj.y, obj.w / 2, obj.h / 2)
+            love.graphics.ellipse("line", x, y, rx, ry)
         elseif obj.kind == "bush" then
+            local radius = math.max(16, fieldW * 0.045 * obj.scale)
             love.graphics.setColor(0.22, 0.42, 0.20)
-            love.graphics.circle("fill", obj.x, obj.y, 34)
-            love.graphics.circle("fill", obj.x + 28, obj.y + 8, 30)
-            love.graphics.circle("fill", obj.x - 26, obj.y + 10, 28)
+            love.graphics.circle("fill", x, y, radius)
+            love.graphics.circle("fill", x + radius * 0.9, y + radius * 0.25, radius * 0.9)
+            love.graphics.circle("fill", x - radius * 0.85, y + radius * 0.3, radius * 0.8)
             love.graphics.setColor(0.16, 0.30, 0.14)
-            love.graphics.rectangle("fill", obj.x - 6, obj.y + 25, 12, 30)
+            love.graphics.rectangle("fill", x - 4, y + radius * 0.6, 8, radius)
         end
     end
 end
 
+function BattleState:drawStatBox(label, value, x, y, w, h)
+    love.graphics.setColor(0.22, 0.16, 0.12)
+    love.graphics.rectangle("fill", x, y, w, h, 8, 8)
+    love.graphics.setColor(0.95, 0.90, 0.82)
+    love.graphics.setFont(self.shared.fonts.small)
+    love.graphics.printf(label, x, y + 8, w, "center")
+    love.graphics.setFont(self.shared.fonts.medium)
+    love.graphics.printf(value, x, y + 28, w, "center")
+end
+
+function BattleState:drawCard(card, index, x, y, width, height)
+    local selected = index == self.selectedCardIndex
+    local playable = card.cost <= self.player.grit
+    local bg = selected and {0.52, 0.35, 0.22} or {0.25, 0.18, 0.14}
+    if not playable then
+        bg = selected and {0.32, 0.20, 0.20} or {0.18, 0.13, 0.13}
+    end
+
+    love.graphics.setColor(bg)
+    love.graphics.rectangle("fill", x, y, width, height, 10, 10)
+
+    love.graphics.setColor(0.95, 0.90, 0.82)
+    love.graphics.setFont(self.shared.fonts.small)
+    love.graphics.printf(card.name, x + 10, y + 10, width - 60, "left")
+
+    local costW = 34
+    local costH = 28
+    love.graphics.setColor(0.86, 0.70, 0.34)
+    love.graphics.rectangle("fill", x + width - costW - 10, y + 10, costW, costH, 6, 6)
+    love.graphics.setColor(0.16, 0.10, 0.06)
+    love.graphics.setFont(self.shared.fonts.medium)
+    love.graphics.printf(tostring(card.cost), x + width - costW - 10, y + 13, costW, "center")
+
+    love.graphics.setColor(0.95, 0.90, 0.82)
+    love.graphics.setFont(self.shared.fonts.small)
+    love.graphics.printf(card.text, x + 10, y + 48, width - 20, "left")
+
+    local infoY = y + height - 42
+    if card.weapon then
+        love.graphics.printf("Weapon: " .. card.weapon, x + 10, infoY, width - 20, "left")
+        infoY = infoY + 16
+    end
+    if card.effects and card.effects.positioning then
+        love.graphics.printf("Position: " .. card.effects.positioning, x + 10, infoY, width - 20, "left")
+    end
+end
+
 function BattleState:draw()
+    local screenW = self.shared.screen.width
+    local screenH = self.shared.screen.height
+    local margin = 20
+    local gap = 10
+    local contentW = screenW - margin * 2
+
     love.graphics.setBackgroundColor(0.12, 0.09, 0.07)
     love.graphics.setColor(0.95, 0.88, 0.76)
     love.graphics.setFont(self.shared.fonts.large)
-    love.graphics.print("High Noon", 35, 20)
+    love.graphics.printf("High Noon", margin, 18, contentW, "center")
 
-    love.graphics.setFont(self.shared.fonts.medium)
-    love.graphics.print("Player HP: " .. self.player.hp .. "/" .. self.player.maxHp, 40, 80)
-    love.graphics.print("Grit: " .. self.player.grit .. "/" .. self.player.maxGrit, 40, 110)
-    love.graphics.print("Block: " .. self.player.block, 40, 140)
-    love.graphics.print("Hand Size: " .. self.player.handSize, 40, 170)
+    local statY = 68
+    local statW = math.floor((contentW - gap) / 2)
+    local statH = 62
+    self:drawStatBox("Player HP", self.player.hp .. "/" .. self.player.maxHp, margin, statY, statW, statH)
+    self:drawStatBox("Enemy HP", self.enemy.hp .. "/" .. self.enemy.maxHp, margin + statW + gap, statY, statW, statH)
 
-    love.graphics.print(self.enemy.name .. " HP: " .. self.enemy.hp .. "/" .. self.enemy.maxHp, 720, 80)
-    love.graphics.print("Intent: " .. self.enemy.intent.type .. " " .. self.enemy.intent.value, 720, 110)
-    love.graphics.print("Bleed: " .. self.enemy.bleed, 720, 140)
+    local row2Y = statY + statH + 8
+    local smallStatW = math.floor((contentW - gap * 2) / 3)
+    self:drawStatBox("Grit", self.player.grit .. "/" .. self.player.maxGrit, margin, row2Y, smallStatW, statH)
+    self:drawStatBox("Block", tostring(self.player.block), margin + smallStatW + gap, row2Y, smallStatW, statH)
+    self:drawStatBox("Bleed", tostring(self.enemy.bleed), margin + (smallStatW + gap) * 2, row2Y, smallStatW, statH)
 
-    love.graphics.print("Weapons:", 40, 220)
-    local wy = 255
-    for _, line in ipairs(self.player:getWeaponStatusLines()) do
-        love.graphics.print(line, 60, wy)
-        wy = wy + 26
-    end
+    local intentY = row2Y + statH + 8
+    self:drawStatBox("Enemy Intent", self.enemy.intent.type .. " " .. self.enemy.intent.value, margin, intentY, contentW, 58)
 
+    local fieldY = intentY + 70
+    local fieldH = 170
     love.graphics.setColor(0.58, 0.47, 0.30)
-    love.graphics.rectangle("fill", 160, 295, 770, 95, 10, 10)
+    love.graphics.rectangle("fill", margin, fieldY, contentW, fieldH, 12, 12)
     love.graphics.setColor(0.82, 0.72, 0.54)
-    love.graphics.print("Street", 520, 330)
-    self:drawFieldObjects()
+    love.graphics.setFont(self.shared.fonts.medium)
+    love.graphics.printf("Street", margin, fieldY + 10, contentW, "center")
+    self:drawFieldObjects(margin, fieldY, contentW, fieldH)
 
-    love.graphics.setColor(0.95, 0.88, 0.76)
-    love.graphics.print("Draw Pile: " .. #self.deck.drawPile, 40, 355)
-    love.graphics.print("Discard Pile: " .. #self.deck.discardPile, 220, 355)
-    love.graphics.print("Cards in Hand: " .. #self.hand, 430, 355)
+    local pileY = fieldY + fieldH + 10
+    self:drawStatBox("Draw", tostring(#self.deck.drawPile), margin, pileY, smallStatW, 54)
+    self:drawStatBox("Discard", tostring(#self.deck.discardPile), margin + smallStatW + gap, pileY, smallStatW, 54)
+    self:drawStatBox("Hand", tostring(#self.hand), margin + (smallStatW + gap) * 2, pileY, smallStatW, 54)
 
-    love.graphics.print("Hand:", 40, 385)
-    local cardWidth = 180
-    for i, card in ipairs(self.hand) do
-        local x = 40 + (i - 1) * (cardWidth + 10)
-        local y = 420
-        local selected = i == self.selectedCardIndex
-        local playable = card.cost <= self.player.grit
-        local bg = selected and {0.52, 0.35, 0.22} or {0.25, 0.18, 0.14}
-        if not playable then
-            bg = selected and {0.32, 0.20, 0.20} or {0.18, 0.13, 0.13}
-        end
-        love.graphics.setColor(bg)
-        love.graphics.rectangle("fill", x, y, cardWidth, 220, 8, 8)
-
-        love.graphics.setColor(0.95, 0.90, 0.82)
-        love.graphics.setFont(self.shared.fonts.medium)
-        love.graphics.print(card.name, x + 10, y + 10)
-
-        love.graphics.setColor(0.86, 0.70, 0.34)
-        love.graphics.rectangle("fill", x + 135, y + 10, 32, 28, 6, 6)
-        love.graphics.setColor(0.16, 0.10, 0.06)
-        love.graphics.setFont(self.shared.fonts.medium)
-        love.graphics.print(tostring(card.cost), x + 146, y + 13)
-
-        love.graphics.setColor(0.95, 0.90, 0.82)
-        love.graphics.setFont(self.shared.fonts.small)
-        love.graphics.printf(card.text, x + 10, y + 70, cardWidth - 20)
-        if card.weapon then
-            love.graphics.print("Weapon: " .. card.weapon, x + 10, y + 180)
-        end
-        if card.effects and card.effects.positioning then
-            love.graphics.print("Positioning: " .. card.effects.positioning, x + 10, y + 198)
-        end
-    end
-
-    love.graphics.setColor(0.92, 0.86, 0.76)
+    local messageY = pileY + 64
+    love.graphics.setColor(0.90, 0.84, 0.70)
     love.graphics.setFont(self.shared.fonts.small)
-    love.graphics.print(self.turnMessage, 40, 650)
-    love.graphics.print("Controls: Left/Right select card, Space play card, E end turn, Enter continue after combat", 40, 675)
+    love.graphics.printf(self.turnMessage, margin, messageY, contentW, "center")
+
+    local controlsY = messageY + 38
+    love.graphics.printf("Left/Right select | Space play | E end turn | Enter continue", margin, controlsY, contentW, "center")
+
+    local cardsTop = controlsY + 34
+    local bottomPadding = 20
+    local availableH = screenH - cardsTop - bottomPadding
+    local cardGap = 8
+    local cardsPerRow = math.min(2, math.max(1, #self.hand))
+    local rows = math.max(1, math.ceil(math.max(1, #self.hand) / cardsPerRow))
+    local cardW = math.floor((contentW - cardGap * (cardsPerRow - 1)) / cardsPerRow)
+    local cardH = math.floor((availableH - cardGap * (rows - 1)) / rows)
+    cardH = math.max(120, math.min(cardH, 180))
+
+    for i, card in ipairs(self.hand) do
+        local row = math.floor((i - 1) / cardsPerRow)
+        local col = (i - 1) % cardsPerRow
+        local x = margin + col * (cardW + cardGap)
+        local y = cardsTop + row * (cardH + cardGap)
+        self:drawCard(card, i, x, y, cardW, cardH)
+    end
 end
 
 return BattleState
