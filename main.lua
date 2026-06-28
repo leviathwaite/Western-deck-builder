@@ -2,7 +2,6 @@ local Game = require("game")
 
 function love.load()
     love.window.setTitle("Western Deck Builder")
-    love.window.setMode(1100, 700, {resizable = false})
     Game:init()
 end
 

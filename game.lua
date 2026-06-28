@@ -8,9 +8,14 @@ local Game = {
 }
 
 function Game:init()
+    local width, height = love.graphics.getDimensions()
     self.shared = {
+        screen = {
+            width = width,
+            height = height
+        },
         fonts = {
-            large = love.graphics.newFont(28),
+            large = love.graphics.newFont(26),
             medium = love.graphics.newFont(18),
             small = love.graphics.newFont(14)
         },

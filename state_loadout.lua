@@ -80,42 +80,57 @@ function LoadoutState:cycleSelected(dir)
     self.message = "Equipped updated for " .. slot.name .. "."
 end
 
+function LoadoutState:drawSlotCard(x, y, width, height, slot, selected, weaponData)
+    local bg = selected and {0.42, 0.28, 0.16} or {0.22, 0.16, 0.12}
+    love.graphics.setColor(bg)
+    love.graphics.rectangle("fill", x, y, width, height, 8, 8)
+
+    love.graphics.setColor(0.95, 0.90, 0.82)
+    love.graphics.setFont(self.shared.fonts.medium)
+    love.graphics.print(slot.name, x + 14, y + 10)
+
+    love.graphics.setFont(self.shared.fonts.small)
+    local equippedLabel = slot.equipped ~= "" and weaponData.byId[slot.equipped].name or "Empty"
+    love.graphics.print("Status: " .. (slot.unlocked and "Unlocked" or "Locked"), x + 14, y + 42)
+    love.graphics.print("Equipped: " .. equippedLabel, x + 14, y + 62)
+
+    if slot.equipped ~= "" and weaponData.byId[slot.equipped] then
+        local w = weaponData.byId[slot.equipped]
+        love.graphics.printf("Type: " .. w.weaponType .. " | Ammo: " .. tostring(w.ammo or 0), x + 14, y + 84, width - 28)
+        love.graphics.printf(w.description, x + 14, y + 104, width - 28)
+    end
+end
+
 function LoadoutState:draw()
+    local screenW = self.shared.screen.width
+    local screenH = self.shared.screen.height
+
     love.graphics.setBackgroundColor(0.14, 0.10, 0.08)
     love.graphics.setColor(0.93, 0.86, 0.72)
     love.graphics.setFont(self.shared.fonts.large)
-    love.graphics.print("Western Deck Builder - Loadout", 30, 20)
+    love.graphics.printf("Western Deck Builder", 20, 24, screenW - 40, "center")
 
     love.graphics.setFont(self.shared.fonts.medium)
-    love.graphics.print("Starting slots:", 40, 80)
+    love.graphics.printf("Loadout", 20, 64, screenW - 40, "center")
+    love.graphics.printf("Starting slots", 20, 110, screenW - 40, "center")
 
-    local y = 130
+    local cardX = 24
+    local cardWidth = screenW - 48
+    local cardHeight = 150
+    local gap = 16
+    local y = 150
+
     for i, slotId in ipairs(self.slotOrder) do
         local slot = self.player.weaponSlots[slotId]
         local selected = i == self.selectedSlotIndex
-        local bg = selected and {0.42, 0.28, 0.16} or {0.22, 0.16, 0.12}
-        love.graphics.setColor(bg)
-        love.graphics.rectangle("fill", 40, y, 1020, 95, 8, 8)
-
-        love.graphics.setColor(0.95, 0.90, 0.82)
-        local equippedLabel = slot.equipped ~= "" and self.weaponData.byId[slot.equipped].name or "Empty"
-        love.graphics.print(slot.name, 60, y + 14)
-        love.graphics.setFont(self.shared.fonts.small)
-        love.graphics.print("Status: " .. (slot.unlocked and "Unlocked" or "Locked"), 60, y + 44)
-        love.graphics.print("Equipped: " .. equippedLabel, 60, y + 64)
-        if slot.equipped ~= "" and self.weaponData.byId[slot.equipped] then
-            local w = self.weaponData.byId[slot.equipped]
-            love.graphics.print("Type: " .. w.weaponType .. " | Ammo: " .. tostring(w.ammo or 0) .. " | Card pack: " .. w.cardPack, 360, y + 44)
-            love.graphics.print(w.description, 360, y + 64)
-        end
-        love.graphics.setFont(self.shared.fonts.medium)
-        y = y + 110
+        self:drawSlotCard(cardX, y, cardWidth, cardHeight, slot, selected, self.weaponData)
+        y = y + cardHeight + gap
     end
 
     love.graphics.setColor(0.90, 0.84, 0.70)
     love.graphics.setFont(self.shared.fonts.small)
-    love.graphics.print(self.message, 40, 600)
-    love.graphics.print("Controls: Up/Down select slot, A/D change equipment, Enter start run", 40, 625)
+    love.graphics.printf(self.message, 24, screenH - 90, screenW - 48, "center")
+    love.graphics.printf("Controls: Up/Down select, A/D change, Enter start run", 24, screenH - 60, screenW - 48, "center")
 end
 
 return LoadoutState
