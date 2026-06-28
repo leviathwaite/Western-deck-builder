@@ -10,10 +10,11 @@ function LoadoutState.new(shared, onStartRun)
     self.onStartRun = onStartRun
     self.weaponData = Weapons.loadAll()
     self.player = Player.new(self.weaponData)
-    self.message = "Choose equipment, then press ENTER to start. Press A/D to change weapon in selected slot."
+    self.message = "Tap a weapon slot to select it. Use buttons to change equipment."
     self.selectedSlotIndex = 1
     self.slotOrder = {"left_holster", "right_holster", "knife_sheath", "back"}
     self.choices = self:buildChoices()
+    self.buttons = {}
     return self
 end
 
@@ -47,6 +48,32 @@ function LoadoutState:keypressed(key)
         self:cycleSelected(1)
     elseif key == "return" or key == "kpenter" then
         self.onStartRun(self.player:exportRunData())
+    end
+end
+
+function LoadoutState:mousepressed(x, y, button)
+    -- Check slot cards
+    for i, btn in ipairs(self.buttons) do
+        if btn.type == "slot" and x >= btn.x and x <= btn.x + btn.w and y >= btn.y and y <= btn.y + btn.h then
+            self.selectedSlotIndex = btn.index
+            return
+        end
+    end
+    
+    -- Check control buttons
+    for i, btn in ipairs(self.buttons) do
+        if btn.type == "prev" and x >= btn.x and x <= btn.x + btn.w and y >= btn.y and y <= btn.y + btn.h then
+            self:cycleSelected(-1)
+            return
+        end
+        if btn.type == "next" and x >= btn.x and x <= btn.x + btn.w and y >= btn.y and y <= btn.y + btn.h then
+            self:cycleSelected(1)
+            return
+        end
+        if btn.type == "start" and x >= btn.x and x <= btn.x + btn.w and y >= btn.y and y <= btn.y + btn.h then
+            self.onStartRun(self.player:exportRunData())
+            return
+        end
     end
 end
 
@@ -101,6 +128,14 @@ function LoadoutState:drawSlotCard(x, y, width, height, slot, selected, weaponDa
     end
 end
 
+function LoadoutState:drawButton(label, x, y, width, height)
+    love.graphics.setColor(0.58, 0.47, 0.30)
+    love.graphics.rectangle("fill", x, y, width, height, 8, 8)
+    love.graphics.setColor(0.95, 0.90, 0.82)
+    love.graphics.setFont(self.shared.fonts.medium)
+    love.graphics.printf(label, x, y + (height - 20) / 2, width, "center")
+end
+
 function LoadoutState:draw()
     local screenW = self.shared.screen.width
     local screenH = self.shared.screen.height
@@ -112,25 +147,50 @@ function LoadoutState:draw()
 
     love.graphics.setFont(self.shared.fonts.medium)
     love.graphics.printf("Loadout", 20, 64, screenW - 40, "center")
-    love.graphics.printf("Starting slots", 20, 110, screenW - 40, "center")
+    love.graphics.printf("Starting slots", 20, 90, screenW - 40, "center")
+
+    -- Clear buttons for this frame
+    self.buttons = {}
 
     local cardX = 24
     local cardWidth = screenW - 48
-    local cardHeight = 150
-    local gap = 16
-    local y = 150
+    local cardHeight = 130
+    local gap = 12
+    local y = 125
 
     for i, slotId in ipairs(self.slotOrder) do
         local slot = self.player.weaponSlots[slotId]
         local selected = i == self.selectedSlotIndex
         self:drawSlotCard(cardX, y, cardWidth, cardHeight, slot, selected, self.weaponData)
+        -- Register slot as clickable
+        table.insert(self.buttons, {type = "slot", index = i, x = cardX, y = y, w = cardWidth, h = cardHeight})
         y = y + cardHeight + gap
     end
 
+    -- Message area
+    local messageY = y + 10
     love.graphics.setColor(0.90, 0.84, 0.70)
     love.graphics.setFont(self.shared.fonts.small)
-    love.graphics.printf(self.message, 24, screenH - 90, screenW - 48, "center")
-    love.graphics.printf("Controls: Up/Down select, A/D change, Enter start run", 24, screenH - 60, screenW - 48, "center")
+    love.graphics.printf(self.message, 24, messageY, screenW - 48, "center")
+
+    -- Control buttons at bottom
+    local btnY = screenH - 120
+    local btnHeight = 50
+    local btnGap = 10
+    local btnWidth = (screenW - 48 - btnGap * 2) / 3
+
+    self:drawButton("<", 24, btnY, btnWidth, btnHeight)
+    table.insert(self.buttons, {type = "prev", x = 24, y = btnY, w = btnWidth, h = btnHeight})
+
+    self:drawButton("START", 24 + btnWidth + btnGap, btnY, btnWidth, btnHeight)
+    table.insert(self.buttons, {type = "start", x = 24 + btnWidth + btnGap, y = btnY, w = btnWidth, h = btnHeight})
+
+    self:drawButton(">", 24 + (btnWidth + btnGap) * 2, btnY, btnWidth, btnHeight)
+    table.insert(self.buttons, {type = "next", x = 24 + (btnWidth + btnGap) * 2, y = btnY, w = btnWidth, h = btnHeight})
+
+    -- Instructions
+    love.graphics.setFont(self.shared.fonts.small)
+    love.graphics.printf("Tap slot to select | < > change weapon | START to begin", 24, screenH - 50, screenW - 48, "center")
 end
 
 return LoadoutState

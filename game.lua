@@ -55,4 +55,10 @@ function Game:keypressed(key)
     end
 end
 
+function Game:mousepressed(x, y, button)
+    if self.state and self.state.mousepressed then
+        self.state:mousepressed(x, y, button)
+    end
+end
+
 return Game

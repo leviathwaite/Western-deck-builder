@@ -18,6 +18,7 @@ function BattleState.new(shared, runData, onReturn)
     self.selectedCardIndex = 1
     self.pendingGameOver = false
     self.fieldObjects = {}
+    self.buttons = {}
     self:buildStartingDeck()
     self:startBattle()
     return self
@@ -74,6 +75,30 @@ function BattleState:keypressed(key)
     end
 end
 
+function BattleState:mousepressed(x, y, button)
+    if self.pendingGameOver then
+        self.onReturn()
+        return
+    end
+
+    -- Check card clicks
+    for i, btn in ipairs(self.buttons) do
+        if btn.type == "card" and x >= btn.x and x <= btn.x + btn.w and y >= btn.y and y <= btn.y + btn.h then
+            self.selectedCardIndex = btn.index
+            self:playSelectedCard()
+            return
+        end
+    end
+
+    -- Check end turn button
+    for i, btn in ipairs(self.buttons) do
+        if btn.type == "endturn" and x >= btn.x and x <= btn.x + btn.w and y >= btn.y and y <= btn.y + btn.h then
+            self:endTurn()
+            return
+        end
+    end
+end
+
 function BattleState:playSelectedCard()
     local card = self.hand[self.selectedCardIndex]
     if not card then
@@ -101,7 +126,7 @@ function BattleState:playSelectedCard()
     end
 
     if self.enemy.hp <= 0 then
-        self.turnMessage = "You won the fight. Press Enter to return to loadout."
+        self.turnMessage = "You won the fight. Tap to return to loadout."
         self.pendingGameOver = true
     end
 end
@@ -161,7 +186,7 @@ function BattleState:endTurn()
     end
 
     if self.enemy.hp <= 0 then
-        self.turnMessage = "The enemy bleeds out. Press Enter to return to loadout."
+        self.turnMessage = "The enemy bleeds out. Tap to return to loadout."
         self.pendingGameOver = true
         return
     end
@@ -176,7 +201,7 @@ function BattleState:endTurn()
     end
 
     if self.player.hp <= 0 then
-        self.turnMessage = "You were defeated. Press Enter to return to loadout."
+        self.turnMessage = "You were defeated. Tap to return to loadout."
         self.pendingGameOver = true
         return
     end
@@ -259,6 +284,14 @@ function BattleState:drawCard(card, index, x, y, width, height)
     end
 end
 
+function BattleState:drawButton(label, x, y, width, height)
+    love.graphics.setColor(0.58, 0.47, 0.30)
+    love.graphics.rectangle("fill", x, y, width, height, 8, 8)
+    love.graphics.setColor(0.95, 0.90, 0.82)
+    love.graphics.setFont(self.shared.fonts.medium)
+    love.graphics.printf(label, x, y + (height - 20) / 2, width, "center")
+end
+
 function BattleState:draw()
     local screenW = self.shared.screen.width
     local screenH = self.shared.screen.height
@@ -266,28 +299,31 @@ function BattleState:draw()
     local gap = 10
     local contentW = screenW - margin * 2
 
+    -- Clear buttons
+    self.buttons = {}
+
     love.graphics.setBackgroundColor(0.12, 0.09, 0.07)
     love.graphics.setColor(0.95, 0.88, 0.76)
     love.graphics.setFont(self.shared.fonts.large)
     love.graphics.printf("High Noon", margin, 18, contentW, "center")
 
-    local statY = 68
+    local statY = 60
     local statW = math.floor((contentW - gap) / 2)
-    local statH = 62
+    local statH = 58
     self:drawStatBox("Player HP", self.player.hp .. "/" .. self.player.maxHp, margin, statY, statW, statH)
     self:drawStatBox("Enemy HP", self.enemy.hp .. "/" .. self.enemy.maxHp, margin + statW + gap, statY, statW, statH)
 
-    local row2Y = statY + statH + 8
+    local row2Y = statY + statH + 6
     local smallStatW = math.floor((contentW - gap * 2) / 3)
     self:drawStatBox("Grit", self.player.grit .. "/" .. self.player.maxGrit, margin, row2Y, smallStatW, statH)
     self:drawStatBox("Block", tostring(self.player.block), margin + smallStatW + gap, row2Y, smallStatW, statH)
     self:drawStatBox("Bleed", tostring(self.enemy.bleed), margin + (smallStatW + gap) * 2, row2Y, smallStatW, statH)
 
-    local intentY = row2Y + statH + 8
-    self:drawStatBox("Enemy Intent", self.enemy.intent.type .. " " .. self.enemy.intent.value, margin, intentY, contentW, 58)
+    local intentY = row2Y + statH + 6
+    self:drawStatBox("Enemy Intent", self.enemy.intent.type .. " " .. self.enemy.intent.value, margin, intentY, contentW, 54)
 
-    local fieldY = intentY + 70
-    local fieldH = 170
+    local fieldY = intentY + 60
+    local fieldH = 140
     love.graphics.setColor(0.58, 0.47, 0.30)
     love.graphics.rectangle("fill", margin, fieldY, contentW, fieldH, 12, 12)
     love.graphics.setColor(0.82, 0.72, 0.54)
@@ -295,28 +331,32 @@ function BattleState:draw()
     love.graphics.printf("Street", margin, fieldY + 10, contentW, "center")
     self:drawFieldObjects(margin, fieldY, contentW, fieldH)
 
-    local pileY = fieldY + fieldH + 10
-    self:drawStatBox("Draw", tostring(#self.deck.drawPile), margin, pileY, smallStatW, 54)
-    self:drawStatBox("Discard", tostring(#self.deck.discardPile), margin + smallStatW + gap, pileY, smallStatW, 54)
-    self:drawStatBox("Hand", tostring(#self.hand), margin + (smallStatW + gap) * 2, pileY, smallStatW, 54)
+    local pileY = fieldY + fieldH + 6
+    self:drawStatBox("Draw", tostring(#self.deck.drawPile), margin, pileY, smallStatW, 50)
+    self:drawStatBox("Discard", tostring(#self.deck.discardPile), margin + smallStatW + gap, pileY, smallStatW, 50)
+    self:drawStatBox("Hand", tostring(#self.hand), margin + (smallStatW + gap) * 2, pileY, smallStatW, 50)
 
-    local messageY = pileY + 64
+    local messageY = pileY + 56
     love.graphics.setColor(0.90, 0.84, 0.70)
     love.graphics.setFont(self.shared.fonts.small)
     love.graphics.printf(self.turnMessage, margin, messageY, contentW, "center")
 
-    local controlsY = messageY + 38
-    love.graphics.printf("Left/Right select | Space play | E end turn | Enter continue", margin, controlsY, contentW, "center")
+    -- End turn button
+    local endTurnBtnY = messageY + 30
+    local endTurnBtnH = 46
+    self:drawButton("END TURN", margin, endTurnBtnY, contentW, endTurnBtnH)
+    table.insert(self.buttons, {type = "endturn", x = margin, y = endTurnBtnY, w = contentW, h = endTurnBtnH})
 
-    local cardsTop = controlsY + 34
-    local bottomPadding = 20
+    -- Cards area
+    local cardsTop = endTurnBtnY + endTurnBtnH + 8
+    local bottomPadding = 16
     local availableH = screenH - cardsTop - bottomPadding
     local cardGap = 8
     local cardsPerRow = math.min(2, math.max(1, #self.hand))
     local rows = math.max(1, math.ceil(math.max(1, #self.hand) / cardsPerRow))
     local cardW = math.floor((contentW - cardGap * (cardsPerRow - 1)) / cardsPerRow)
     local cardH = math.floor((availableH - cardGap * (rows - 1)) / rows)
-    cardH = math.max(120, math.min(cardH, 180))
+    cardH = math.max(100, math.min(cardH, 160))
 
     for i, card in ipairs(self.hand) do
         local row = math.floor((i - 1) / cardsPerRow)
@@ -324,6 +364,8 @@ function BattleState:draw()
         local x = margin + col * (cardW + cardGap)
         local y = cardsTop + row * (cardH + cardGap)
         self:drawCard(card, i, x, y, cardW, cardH)
+        -- Register card as clickable
+        table.insert(self.buttons, {type = "card", index = i, x = x, y = y, w = cardW, h = cardH})
     end
 end
 
